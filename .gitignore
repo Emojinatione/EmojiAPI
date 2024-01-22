@@ -2,3 +2,4 @@ node_modules/
 .env
 src/routes/dbRoutes.ts
 *.lnk
+package - Copy.json
