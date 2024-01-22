@@ -1,2 +1,3 @@
-# EmojiAPI
- Api for emoji lists
+# Kishurit server 
+Simple data server for the website "Kishurit"
+
