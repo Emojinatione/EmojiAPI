@@ -21,17 +21,21 @@ interface EmojiCollection {
 
 const EMOJI_VERSION: string = 'latest'; //'15.1';
 
-async function main() {
-    const text: string = await getTestFile(EMOJI_VERSION);
-    const collected: EmojiCollection = getCollection(text);
-    console.log(`Format text to json...`);
+export async function makeEmojiList() {
+    try {
+        const text: string = await getTestFile(EMOJI_VERSION);
+        const collected: EmojiCollection = getCollection(text);
 
-    console.log(`Processed emojis: ${collected.full.length}`);
+        console.log(`Format text to json...`);
+        console.log(`Processed emojis: ${collected.full.length}`);
+        console.log('Write file: emoji.json, emoji-compact.json \n');
 
-    console.log('Write file: emoji.json, emoji-compact.json \n');
-    await writeFiles(collected);
+        await writeFiles(collected);
 
-    console.log(collected.comments);
+        console.log(collected.comments);
+    } catch (error) {
+        console.error('An error occurred:', error);
+    }
 }
 
 async function getTestFile(ver: string): Promise<string> {
@@ -56,20 +60,22 @@ async function getTestFile(ver: string): Promise<string> {
 }
 
 function getCollection(text: string): EmojiCollection {
-    const collected: EmojiCollection = text.trim().split('\n').reduce((accu, line) => {
+    const collected: EmojiCollection = text.trim().split('\n').reduce((accu: EmojiCollection, line) => {
+        let group: string = '';
+        let subgroup: string = ';'
         if (line.startsWith('# group: ')) {
             console.log(`  Processing ${line.substr(2)}...`);
-            accu.group = line.substr(9);
+            group = line.substr(9);
         } else if (line.startsWith('# subgroup: ')) {
-            accu.subgroup = line.substr(12);
+            subgroup = line.substr(12);
         } else if (line.startsWith('#')) {
             accu.comments = accu.comments + line + '\n';
         } else {
             const meta: EmojiMeta | null = parseLine(line);
             if (meta && (meta.status === 'fully-qualified' || meta.status === 'component')) {
-                meta.category = `${accu.group} (${accu.subgroup})`;
-                meta.group = accu.group;
-                meta.subgroup = accu.subgroup;
+                meta.category = `${group} (${subgroup})`;
+                meta.group = group;
+                meta.subgroup = subgroup;
                 accu.full.push(meta);
                 accu.compact.push(meta.char);
             } else {
@@ -81,7 +87,7 @@ function getCollection(text: string): EmojiCollection {
     return collected;
 }
 
-function parseLine(line: string): EmojiMeta | null {
+function parseLine(line: string): any | null {
     const data: string[] = line.trim().split(/\s+[;#] /);
 
     if (data.length !== 3) {
@@ -90,7 +96,7 @@ function parseLine(line: string): EmojiMeta | null {
     }
 
     const [codes, status, charAndName]: string[] = data;
-    const [, char, version, name]: RegExpMatchArray | null = charAndName.match(/^(\S+) (E\d+\.\d+) (.+)$/);
+    const [, char, version, name]: any = charAndName.match(/^(\S+) (E\d+\.\d+) (.+)$/);
     const emojiVersion: string = version.slice(1);
 
     return { codes, status, emojiVersion, char, name };
@@ -102,5 +108,3 @@ function writeFiles({ full, compact }: EmojiCollection): void {
     fs.writeFileSync(rel('emoji.json'), JSON.stringify(full), 'utf8');
     fs.writeFileSync(rel('emoji-compact.json'), JSON.stringify(compact), 'utf8');
 }
-
-main();
