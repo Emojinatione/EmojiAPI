@@ -6,10 +6,12 @@ import nocache from "nocache";
 dotenv.config();
 
 import { app } from "./server";
-import routes from "./routes";
-import { cls } from "./api";
+import routes from "./routes/routes";
+// import { cls } from "./api";
+// import { makeEmojiList } from "./emojiJsonMaker"
 
-cls();
+// cls();
+// makeEmojiList();
 
 const options: cors.CorsOptions = {
   allowedHeaders: ["Content-Type"],
@@ -26,18 +28,12 @@ app.use(nocache());
 app.use(morgan("dev"));
 
 app.use(function (req: Request, res: Response, next: NextFunction) {
-  console.log(new Date().toLocaleTimeString());
   next();
 });
 
-routes.forEach((route) => {
-  app.use("/", route);
-});
+app.use("/", routes);
 
 app.post("/*", function (req: Request, res: Response, next: NextFunction) {
   res.status(404).json({ status: 404, message: "הדף לא קיים" });
 });
 
-app.get("/*", function (req: Request, res: Response, next: NextFunction) {
-  res.status(404).json({ status: 404, message: "הדף לא קיים" });
-});
